@@ -1,14 +1,14 @@
-// src/lib/api/gemini.js
+// src/lib/api/openai.js
 
 /**
- * 使用 Gemini API 獲取面試官回應 (免費版)
+ * 使用 ChatGPT-4o API 獲取面試官回應 (付費版)
  * @param {Array} messages - 對話歷史
  * @param {String} karenType - Karen類型
  * @param {String} industry - 產業
  * @param {String} language - 語言 (zh_TW/en)
  * @returns {Promise<Object>} - AI 回應
  */
-export async function getGeminiResponse(
+export async function getChatGPTResponse(
   messages,
   karenType,
   industry,
@@ -16,71 +16,70 @@ export async function getGeminiResponse(
 ) {
   try {
     // 從環境變量獲取 API 密鑰
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+    const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || "";
     if (!apiKey) {
-      console.error("Gemini API key not found");
+      console.error("OpenAI API key not found");
       throw new Error("API key not found");
     }
-    // 構建 Gemini API URL
-    const apiUrl =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
-    const fullUrl = `${apiUrl}?key=${apiKey}`;
+
+    // 構建 OpenAI API URL
+    const apiUrl = "https://api.openai.com/v1/chat/completions";
+
     // 構建提示詞
-    const prompt = buildGeminiPrompt(messages, karenType, industry, language);
+    const formattedMessages = buildChatGPTMessages(
+      messages,
+      karenType,
+      industry,
+      language,
+    );
+
     // 發送請求
-    const response = await fetch(fullUrl, {
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1024,
-        },
+        model: "gpt-4o",
+        messages: formattedMessages,
+        temperature: 0.7,
+        max_tokens: 1024,
       }),
     });
+
     // 解析響應
     const data = await response.json();
     if (!response.ok) {
-      console.error("Gemini API error:", data);
+      console.error("OpenAI API error:", data);
       throw new Error("API response error");
     }
+
     // 確保我們可以從響應中獲取文本
     if (
-      data.candidates &&
-      data.candidates[0] &&
-      data.candidates[0].content &&
-      data.candidates[0].content.parts &&
-      data.candidates[0].content.parts[0].text
+      data.choices &&
+      data.choices[0] &&
+      data.choices[0].message &&
+      data.choices[0].message.content
     ) {
       return {
-        text: data.candidates[0].content.parts[0].text,
+        text: data.choices[0].message.content,
         timestamp: new Date().toISOString(),
       };
     } else {
-      console.error("Unexpected Gemini API response structure:", data);
+      console.error("Unexpected OpenAI API response structure:", data);
       throw new Error("Unexpected API response");
     }
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
+    console.error("Error calling OpenAI API:", error);
     throw error;
   }
 }
 
 /**
- * 構建 Gemini 提示詞
+ * 構建 ChatGPT 訊息格式
  */
-function buildGeminiPrompt(messages, karenType, industry, language) {
+function buildChatGPTMessages(messages, karenType, industry, language) {
   // 是否使用英文
   const isEnglish = language === "en";
 
@@ -119,84 +118,52 @@ function buildGeminiPrompt(messages, karenType, industry, language) {
       : "這次面試針對零售產業的職位，包括銷售、市場營銷、客戶服務等相關領域。你應該關注候選人的銷售技巧、客戶服務經驗和市場分析能力。",
   };
 
-  // 構建完整提示詞
-  let prompt = isEnglish
-    ? `
-You are Karen, an interviewer conducting a mock interview.
+  // 構建系統信息
+  const systemMessage = {
+    role: "system",
+    content: isEnglish
+      ? `You are Karen, an interviewer conducting a mock interview.
 ${karenPersonalities[karenType] || karenPersonalities.strict}
 ${industryContext[industry] || ""}
 
-Please respond in English.
+You must respond in English. This is very important.
 
-`
-    : `
-你是一位名叫Karen的面試官，正在進行一場模擬面試。
-${karenPersonalities[karenType] || karenPersonalities.strict}
-${industryContext[industry] || ""}
-
-請使用繁體中文回應所有問題。
-
-`;
-
-  // 檢查是否是首次對話
-  if (messages.length === 0 || !messages.some((m) => m.sender === "user")) {
-    prompt += isEnglish
-      ? `
-Since this is the beginning of the conversation, please start with the following greeting:
+If this is the beginning of the conversation and the user hasn't spoken yet, you should start with:
 "Hello, I'm Karen, your interviewer today. Please introduce yourself and tell me about your background and experience."
 
-Do not add any other content, just use the greeting above.
-`
-      : `
-由於這是對話的開始，請以下面的話開場：
-"你好，我是今天負責面試的Karen。請先做個自我介紹，告訴我你的相關背景和經驗。"
-
-不要添加任何其他內容，就使用上面的開場白。
-`;
-    return prompt;
-  }
-
-  // 對於後續對話，添加對話歷史
-  prompt += isEnglish
-    ? `Here is the interview conversation so far:\n\n`
-    : `以下是到目前為止的面試對話：\n\n`;
-
-  messages.forEach((msg, index) => {
-    const role =
-      msg.sender === "karen"
-        ? isEnglish
-          ? "Karen (Interviewer)"
-          : "Karen (面試官)"
-        : isEnglish
-          ? "Candidate"
-          : "面試者";
-    prompt += `${role}: ${msg.text}\n\n`;
-  });
-
-  // 添加回應指示
-  prompt += isEnglish
-    ? `
-Now, please respond as Karen to the candidate's last message. Your response should:
+Your responses should:
 1. Match your interviewer personality
 2. If the candidate's answer is insufficient, ask follow-up questions or request more details
 3. If the candidate's answer is sufficient, you can ask the next relevant question
 4. Keep your response concise, no more than 3-4 sentences
 5. Avoid template language, maintain a natural conversation style
 6. Don't say you're an AI, stay in character
-7. Respond in English
+7. All responses must be in English`
+      : `你是一位名叫Karen的面試官，正在進行一場模擬面試。
+${karenPersonalities[karenType] || karenPersonalities.strict}
+${industryContext[industry] || ""}
 
-Karen's response:`
-    : `
-現在，請你以Karen的身份用繁體中文回應面試者的最後一條消息。回應應該:
+你必須使用繁體中文回應所有問題。這一點非常重要。
+
+如果這是對話的開始且用戶還沒有發言，你應該以以下句子開始對話：
+"你好，我是今天負責面試的Karen。請先做個自我介紹，告訴我你的相關背景和經驗。"
+
+你的回應應該:
 1. 符合你的面試官人格特質
 2. 如果面試者的回答不夠充分，應該提出跟進問題或要求更多細節
 3. 如果面試者的回答充分，可以提出下一個相關問題
 4. 回應應該簡潔，不超過3-4句話
 5. 不要使用模板化的語言，保持自然的對話風格
 6. 不要說你是AI，保持角色扮演
-7. 務必使用繁體中文回應
+7. 所有回應必須使用繁體中文`,
+  };
 
-Karen的回應:`;
+  // 格式化對話歷史
+  const formattedDialogue = messages.map((msg) => ({
+    role: msg.sender === "karen" ? "assistant" : "user",
+    content: msg.text,
+  }));
 
-  return prompt;
+  // 結合系統信息和對話歷史
+  return [systemMessage, ...formattedDialogue];
 }

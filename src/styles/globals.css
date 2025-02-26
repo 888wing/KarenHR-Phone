@@ -1,0 +1,101 @@
+/* styles/globals.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 254, 249, 227; /* #FEF9E3 */
+  --accent-color: 230, 170, 99; /* #E6AA63 */
+  --karen-red: 216, 54, 93; /* #D8365D */
+  --message-bubble: 255, 232, 179; /* #FFE8B3 */
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+  background-color: rgb(var(--background-rgb));
+  color: rgb(var(--foreground-rgb));
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#__next {
+  min-height: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Customize scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
+.typing-indicator .dot {
+  animation: bounce 1.5s infinite;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 420px) {
+  .mobile-container {
+    width: 100%;
+  }
+}
+
+/* Remove button focus outlines on mobile */
+button:focus, 
+input:focus, 
+select:focus {
+  outline: none;
+}
+
+/* Button press effect */
+button:active {
+  transform: scale(0.98);
+}
+
+/* Prevent text selection on UI elements */
+.button, .nav-item, .mic-button, .avatar {
+  user-select: none;
+  -webkit-user-select: none;
+}

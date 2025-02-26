@@ -1,22 +1,100 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 
 export default function Home() {
   const router = useRouter();
-  const [industry, setIndustry] = useState("");
-  const [karenType, setKarenType] = useState("");
+  const [industry, setIndustry] = useState("tech");
+  const [karenType, setKarenType] = useState("strict");
+  const [language, setLanguage] = useState("zh_TW"); // 新增語言選擇
+  const [isPremium, setIsPremium] = useState(false);
+  const [usageData, setUsageData] = useState({ count: 0, limit: 10 });
 
+  // 檢查用戶狀態
+  useEffect(() => {
+    // 從localStorage讀取用戶類型和使用情況
+    try {
+      const currentMonth =
+        new Date().getMonth() + "-" + new Date().getFullYear();
+      const storedData = JSON.parse(localStorage.getItem("karenUsage") || "{}");
+      const premium = localStorage.getItem("karePremium") === "true";
+
+      setIsPremium(premium);
+
+      if (!storedData.month || storedData.month !== currentMonth) {
+        // 新的月份，重置計數
+        const newData = {
+          month: currentMonth,
+          count: 0,
+          premium: premium,
+        };
+        localStorage.setItem("karenUsage", JSON.stringify(newData));
+        setUsageData({ count: 0, limit: premium ? 50 : 10 });
+      } else {
+        setUsageData({
+          count: storedData.count || 0,
+          limit: premium ? 50 : 10,
+        });
+      }
+    } catch (e) {
+      console.error("Error loading user data:", e);
+      setUsageData({ count: 0, limit: 10 });
+    }
+  }, []);
+
+  // 處理升級到付費版
+  const handleUpgrade = () => {
+    // 在實際應用中，這裡應該導向支付頁面
+    const confirmed = window.confirm(
+      "升級到Karen AI付費版可獲得更多功能和使用次數。繼續進行升級？",
+    );
+    if (confirmed) {
+      // 模擬付費成功
+      localStorage.setItem("karePremium", "true");
+      setIsPremium(true);
+      alert("恭喜！您已成功升級到付費版。");
+    }
+  };
+
+  // 開始面試
   const handleStartInterview = () => {
-    if (!industry || !karenType) {
-      alert("請選擇產業和Karen類型");
+    // 檢查是否達到使用限制
+    if (usageData.count >= usageData.limit) {
+      alert(
+        `您已達到本月免費使用限制(${usageData.limit}次)。請升級到付費版繼續使用。`,
+      );
       return;
     }
 
-    router.push({
-      pathname: "/chat",
-      query: { industry, karenType },
-    });
+    // 免費版用戶不能自選行業和Karen類型
+    if (!isPremium) {
+      // 免費版固定使用科技業和嚴格型Karen
+      router.push({
+        pathname: "/chat",
+        query: {
+          industry: "tech",
+          karenType: "strict",
+          language: language,
+          premium: "false",
+        },
+      });
+    } else {
+      // 付費版可以自由選擇
+      if (!industry || !karenType) {
+        alert("請選擇產業和Karen類型");
+        return;
+      }
+
+      router.push({
+        pathname: "/chat",
+        query: {
+          industry,
+          karenType,
+          language,
+          premium: "true",
+        },
+      });
+    }
   };
 
   return (
@@ -36,97 +114,192 @@ export default function Home() {
           <div className="profile-pic">
             <img src="/profile-pic.png" alt="Profile" />
           </div>
-          <div className="menu-icon">
-            <svg viewBox="0 0 24 24" width="24" height="24">
-              <path
-                fill="currentColor"
-                d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"
-              ></path>
-            </svg>
+          <div className="title-container">
+            <h1 className="app-title">Karen AI</h1>
+            <p className="app-subtitle">面試訓練助手</p>
+          </div>
+          <div className="premium-badge" onClick={handleUpgrade}>
+            {isPremium ? "PRO" : "免費版"}
+          </div>
+        </div>
+
+        {/* 升級橫幅 */}
+        {!isPremium && (
+          <div className="upgrade-banner">
+            <div className="banner-content">
+              <div className="banner-text">
+                <h3>升級到付費版</h3>
+                <p>解鎖自定義面試、50次每月使用量、高級AI...</p>
+              </div>
+              <button className="upgrade-button" onClick={handleUpgrade}>
+                立即升級
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 使用情況顯示 */}
+        <div className="usage-display">
+          <div className="usage-text">
+            本月已使用:{" "}
+            <span className="usage-highlight">
+              {usageData.count}/{usageData.limit}
+            </span>
+          </div>
+          <div className="usage-bar">
+            <div
+              className="usage-progress"
+              style={{
+                width: `${Math.min(100, (usageData.count / usageData.limit) * 100)}%`,
+              }}
+            ></div>
           </div>
         </div>
 
         {/* 主要內容 */}
         <div className="main-content">
           <div className="mic-button" onClick={handleStartInterview}>
-            <svg viewBox="0 0 24 24" width="64" height="64">
-              <path
-                fill="currentColor"
-                d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"
-              ></path>
-              <path
-                fill="currentColor"
-                d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"
-              ></path>
-            </svg>
-            <p>點擊開始面試</p>
+            <div className="mic-icon">
+              <svg viewBox="0 0 24 24" width="48" height="48">
+                <path
+                  fill="currentColor"
+                  d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"
+                />
+              </svg>
+            </div>
+            <p>開始面試</p>
           </div>
 
+          {/* 語言選擇 */}
           <div className="selection-section">
             <div className="select-box">
               <label>
-                <span className="star-icon">★</span> 產業
+                <span className="option-icon">🌐</span> 語言
               </label>
               <select
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
                 className="form-select"
               >
-                <option value="">選擇產業</option>
-                <option value="tech">科技業</option>
-                <option value="finance">金融業</option>
-                <option value="healthcare">醫療保健</option>
-                <option value="education">教育業</option>
-                <option value="retail">零售業</option>
+                <option value="zh_TW">繁體中文</option>
+                <option value="en">English</option>
               </select>
             </div>
 
-            <div className="select-box">
-              <label>
-                <span className="star-icon">★</span> Karen類型
-              </label>
-              <select
-                value={karenType}
-                onChange={(e) => setKarenType(e.target.value)}
-                className="form-select"
-              >
-                <option value="">選擇Karen類型</option>
-                <option value="strict">嚴格型Karen</option>
-                <option value="detailed">細節控Karen</option>
-                <option value="impatient">急性子Karen</option>
-                <option value="skeptical">質疑型Karen</option>
-              </select>
-            </div>
+            {/* 付費版顯示更多選項 */}
+            {isPremium && (
+              <>
+                <div className="select-box">
+                  <label>
+                    <span className="option-icon">🏢</span> 產業 (Pro)
+                  </label>
+                  <select
+                    value={industry}
+                    onChange={(e) => setIndustry(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="tech">科技業</option>
+                    <option value="finance">金融業</option>
+                    <option value="healthcare">醫療保健</option>
+                    <option value="education">教育業</option>
+                    <option value="retail">零售業</option>
+                  </select>
+                </div>
+
+                <div className="select-box">
+                  <label>
+                    <span className="option-icon">👩‍💼</span> Karen類型 (Pro)
+                  </label>
+                  <select
+                    value={karenType}
+                    onChange={(e) => setKarenType(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="strict">嚴格型Karen</option>
+                    <option value="detailed">細節控Karen</option>
+                    <option value="impatient">急性子Karen</option>
+                    <option value="skeptical">質疑型Karen</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {/* 免費版顯示未解鎖選項 */}
+            {!isPremium && (
+              <>
+                <div className="select-box disabled">
+                  <div className="locked-option">
+                    <label>
+                      <span className="option-icon">🏢</span> 產業
+                    </label>
+                    <div className="lock-icon">🔒</div>
+                  </div>
+                  <select className="form-select" disabled>
+                    <option>升級解鎖更多產業選擇</option>
+                  </select>
+                </div>
+
+                <div className="select-box disabled">
+                  <div className="locked-option">
+                    <label>
+                      <span className="option-icon">👩‍💼</span> Karen類型
+                    </label>
+                    <div className="lock-icon">🔒</div>
+                  </div>
+                  <select className="form-select" disabled>
+                    <option>升級解鎖更多Karen類型</option>
+                  </select>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* 底部導航欄 */}
         <div className="bottom-nav">
           <div className="nav-item active">
-            <div className="nav-icon karen-pro">A</div>
-            <span>Karen Pro</span>
-          </div>
-          <div className="nav-item">
             <div className="nav-icon">
               <svg viewBox="0 0 24 24" width="24" height="24">
                 <path
                   fill="currentColor"
-                  d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2 2H5V5h14v14z"
+                  d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
                 ></path>
               </svg>
             </div>
-            <span>統計</span>
+            <span>首頁</span>
           </div>
-          <div className="nav-item">
+          <div className="nav-item" onClick={handleStartInterview}>
             <div className="nav-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  fill="currentColor"
+                  fillOpacity="0.2"
+                />
+                <path
+                  fill="currentColor"
+                  d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
+                />
+              </svg>
+            </div>
+            <span>開始</span>
+          </div>
+          <div className="nav-item" onClick={handleUpgrade}>
+            <div className={`nav-icon ${isPremium ? "premium-active" : ""}`}>
               <svg viewBox="0 0 24 24" width="24" height="24">
                 <path
                   fill="currentColor"
-                  d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
-                ></path>
+                  d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"
+                />
               </svg>
             </div>
-            <span>設定</span>
+            <span>{isPremium ? "Pro" : "升級"}</span>
           </div>
         </div>
       </div>
@@ -137,7 +310,7 @@ export default function Home() {
           max-width: 420px;
           min-height: 100vh;
           margin: 0 auto;
-          background-color: #fdf6e3;
+          background: linear-gradient(145deg, #f8f3e8, #fdf6e3);
           position: relative;
           display: flex;
           flex-direction: column;
@@ -158,8 +331,10 @@ export default function Home() {
           justify-content: space-between;
           align-items: center;
           padding: 15px;
-          background-color: #fdf6e3;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+          background: linear-gradient(to right, #e6b17a, #e4997e);
+          border-bottom-left-radius: 15px;
+          border-bottom-right-radius: 15px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .profile-pic {
@@ -167,10 +342,12 @@ export default function Home() {
           height: 40px;
           border-radius: 50%;
           overflow: hidden;
-          background-color: #ddd;
+          background-color: #fff;
           display: flex;
           align-items: center;
           justify-content: center;
+          border: 2px solid white;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .profile-pic img {
@@ -179,9 +356,123 @@ export default function Home() {
           object-fit: cover;
         }
 
-        .menu-icon {
-          color: #333;
+        .title-container {
+          text-align: center;
+          color: white;
+        }
+
+        .app-title {
+          margin: 0;
+          font-size: 22px;
+          font-weight: bold;
+          letter-spacing: 1px;
+        }
+
+        .app-subtitle {
+          margin: 0;
+          font-size: 12px;
+          opacity: 0.9;
+        }
+
+        .premium-badge {
+          background-color: white;
+          color: #e6b17a;
+          padding: 5px 12px;
+          border-radius: 15px;
+          font-size: 12px;
+          font-weight: bold;
           cursor: pointer;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+        }
+
+        .premium-badge:hover {
+          transform: scale(1.05);
+          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 升級橫幅 */
+        .upgrade-banner {
+          margin: 15px;
+          background: linear-gradient(135deg, #6e8efb, #a777e3);
+          border-radius: 12px;
+          padding: 15px;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .banner-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .banner-text {
+          color: white;
+        }
+
+        .banner-text h3 {
+          margin: 0 0 5px 0;
+          font-size: 16px;
+        }
+
+        .banner-text p {
+          margin: 0;
+          font-size: 12px;
+          opacity: 0.9;
+        }
+
+        .upgrade-button {
+          background-color: white;
+          color: #a777e3;
+          border: none;
+          padding: 8px 15px;
+          border-radius: 20px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .upgrade-button:hover {
+          transform: scale(1.05);
+        }
+
+        /* 使用情況顯示 */
+        .usage-display {
+          margin: 15px 15px 0;
+          padding: 10px;
+          background-color: white;
+          border-radius: 10px;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .usage-text {
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 5px;
+        }
+
+        .usage-highlight {
+          font-weight: bold;
+          color: ${usageData.count > usageData.limit * 0.8
+            ? "#d8365d"
+            : "#333"};
+        }
+
+        .usage-bar {
+          height: 6px;
+          background-color: #f0f0f0;
+          border-radius: 3px;
+          overflow: hidden;
+        }
+
+        .usage-progress {
+          height: 100%;
+          background: linear-gradient(
+            to right,
+            #4caf50,
+            ${usageData.count > usageData.limit * 0.8 ? "#d8365d" : "#e6b17a"}
+          );
+          transition: width 0.3s ease;
         }
 
         /* 主要內容 */
@@ -195,38 +486,52 @@ export default function Home() {
         }
 
         .mic-button {
-          width: 120px;
-          height: 120px;
+          width: 150px;
+          height: 150px;
           border-radius: 50%;
-          background-color: #e6b17a;
+          background: linear-gradient(145deg, #e6b17a, #d8a067);
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           margin-bottom: 30px;
           cursor: pointer;
-          color: #000;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          color: white;
+          box-shadow: 0 8px 15px rgba(216, 160, 103, 0.3);
           transition: all 0.3s;
         }
 
         .mic-button:hover {
           transform: scale(1.05);
-          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 10px 20px rgba(216, 160, 103, 0.4);
+        }
+
+        .mic-icon {
+          margin-bottom: 5px;
         }
 
         .mic-button p {
-          margin-top: 8px;
-          font-size: 14px;
+          margin: 5px 0 0;
+          font-size: 16px;
+          font-weight: 500;
         }
 
         .selection-section {
           width: 100%;
-          max-width: 300px;
+          max-width: 320px;
+          margin-top: 20px;
         }
 
         .select-box {
           margin-bottom: 20px;
+          background-color: white;
+          padding: 12px;
+          border-radius: 10px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .select-box.disabled {
+          opacity: 0.7;
         }
 
         .select-box label {
@@ -234,29 +539,46 @@ export default function Home() {
           margin-bottom: 8px;
           font-size: 14px;
           font-weight: 500;
+          color: #333;
         }
 
-        .star-icon {
-          color: #333;
+        .locked-option {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .lock-icon {
+          font-size: 14px;
+        }
+
+        .option-icon {
           margin-right: 6px;
         }
 
         .form-select {
           width: 100%;
           padding: 10px;
-          border: 1px solid #d1d1d1;
-          border-radius: 4px;
-          background-color: #fff;
-          font-size: 16px;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          background-color: #f9f9f9;
+          font-size: 14px;
           color: #333;
+          outline: none;
+        }
+
+        .form-select:focus {
+          border-color: #e6b17a;
+          box-shadow: 0 0 0 2px rgba(230, 177, 122, 0.2);
         }
 
         /* 底部導航欄 */
         .bottom-nav {
           display: flex;
-          background-color: #e6b17a;
-          border-top: 1px solid rgba(0, 0, 0, 0.1);
-          padding: 10px 0;
+          background: linear-gradient(to right, #e6b17a, #e4997e);
+          padding: 12px 0;
+          border-top-left-radius: 15px;
+          border-top-right-radius: 15px;
         }
 
         .nav-item {
@@ -265,28 +587,36 @@ export default function Home() {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          color: #333;
+          color: white;
           font-size: 12px;
+          cursor: pointer;
+          transition: all 0.3s;
+          position: relative;
+        }
+
+        .nav-item:hover {
+          transform: translateY(-2px);
         }
 
         .nav-icon {
           margin-bottom: 4px;
-        }
-
-        .karen-pro {
-          width: 24px;
-          height: 24px;
-          background-color: #d8365d;
-          color: white;
-          border-radius: 4px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-weight: bold;
         }
 
-        .nav-item.active {
-          color: #d8365d;
+        .nav-item.active::after {
+          content: "";
+          position: absolute;
+          bottom: -12px;
+          width: 40%;
+          height: 3px;
+          background-color: white;
+          border-radius: 3px;
+        }
+
+        .premium-active {
+          color: #ffd700;
         }
       `}</style>
     </>

@@ -1,7 +1,7 @@
 // pages/_app.jsx
 import React from "react";
 import Head from "next/head";
-import { AppProvider } from "../src/contexts/AppContext";
+import { AppProvider } from "../contexts/AppContext";
 import "../styles/globals.css";
 
 function MyApp({ Component, pageProps }) {
