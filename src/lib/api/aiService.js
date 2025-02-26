@@ -57,16 +57,11 @@ export function generateKarenResponse(messages, personality, language = "zh") {
  * @param {Array} messages - 對話歷史
  * @returns {Number} - 進度百分比 (0-100)
  */
-export function calculateInterviewProgress(messages) {
-  const totalQuestions = 10; // 一場面試的標準問題數
-
-  // 計算Karen發送的消息數（第一條歡迎信息不計算）
-  const karenMessages = messages.filter((m) => m.sender === "karen");
-  const questionCount = karenMessages.length > 0 ? karenMessages.length - 1 : 0;
-
-  // 防止進度超過100%
-  return Math.min(100, Math.max(0, (questionCount / totalQuestions) * 100));
-}
+export const calculateInterviewProgress = (messages) => {
+  // 簡單的進度計算邏輯
+  const karenMessages = messages.filter(m => m.sender === "karen").length;
+  return Math.min(100, karenMessages * 10);
+};
 
 /**
  * 獲取面試得分

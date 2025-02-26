@@ -167,3 +167,19 @@ ${industryContext[industry] || ""}
   // 結合系統信息和對話歷史
   return [systemMessage, ...formattedDialogue];
 }
+
+export const generateResponse = async (messages, karenType, industry, isPremium, language) => {
+  try {
+    if (isPremium) {
+      // 付費版使用 ChatGPT
+      return await getChatGPTResponse(messages, karenType, industry, language);
+    } else {
+      // 免費版使用本地生成的回應
+      return generateKarenResponse(messages, karenType, language);
+    }
+  } catch (error) {
+    console.error("生成回應時出錯:", error);
+    // 如果 API 調用失敗，使用本地生成的回應作為備用
+    return generateKarenResponse(messages, karenType, language);
+  }
+};

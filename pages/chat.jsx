@@ -189,6 +189,14 @@ export default function Chat() {
     setInputMessage("");
     setIsLoading(true);
 
+    console.log("發送訊息:", {
+      messages,
+      karenType,
+      industry,
+      isPremium,
+      language
+    });
+
     try {
       // 在用戶發送消息後評估面試表現
       if (messages.length > 2) {
@@ -235,6 +243,7 @@ export default function Chat() {
         isPremium,
         language || "zh_TW",
       );
+      console.log("AI 回應:", response);
 
       const karenMessage = {
         id: messages.length + 2,
