@@ -3,7 +3,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { generateResponse } from "../src/lib/api";
 import { calculateInterviewProgress } from "../src/lib/api/aiService";
-import RealtimeFeedback from "../src/components/score/RealtimeFeedback";
+import RealtimeFeedback from "[正確的路徑]/RealtimeFeedback";   
 import {
   evaluateInterview,
   saveEvaluationResult,
