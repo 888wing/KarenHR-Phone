@@ -58,81 +58,39 @@ const InterviewPerformanceChart = ({ evaluationHistory }) => {
   const performanceHistory = getPerformanceHistory();
   const currentScores = getCurrentScores();
 
-
-export default function Score() {
-  // ... 現有狀態 ...
-  const [evaluationHistory, setEvaluationHistory] = useState([]);
-
-  // 獲取評估歷史
-  useEffect(() => {
-    // 模擬API調用
-    const fetchData = () => {
-      setIsLoading(true);
-
-      try {
-        // 從本地存儲或API獲取評估歷史
-        const history = getUserEvaluationHistory('temp-user-id', 1);
-
-        if (history && history.length > 0) {
-          const latestEvaluation = history[0];
-
-          // 更新UI狀態
-          setScore(`${latestEvaluation.totalScore}/100`);
-          setRanking("10,952");  // 這裡可以從API獲取真實排名
-          setComment(latestEvaluation.detailedFeedback);
-
-          // 存儲完整評估結果用於圖表
-          setEvaluationHistory(history);
-        } else {
-          // 如果沒有歷史記錄，使用默認數據
-          setScore("96/100");
-          setRanking("10,952");
-          setComment("你的表現非常出色！回答清晰且深入，專業知識豐富。建議可以進一步練習結構化表達和情境案例分享，使回答更加生動。你的表現已經超過了大多數面試者，繼續保持！");
-        }
-      } catch (error) {
-        console.error("獲取評估數據時出錯:", error);
-        // 使用備用數據
-        setScore("96/100");
-        setRanking("10,952");
-        setComment("你的表現非常出色！回答清晰且深入，專業知識豐富。建議可以進一步練習結構化表達和情境案例分享，使回答更加生動。你的表現已經超過了大多數面試者，繼續保持！");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  // ... 其餘代碼保持不變 ...
-}
-
-// 動態導入圖表組件以避免服務器渲染問題
-const InterviewPerformanceChart = dynamic(
-  () => import("../src/components/score/InterviewPerformanceChart"),
-  { ssr: false },
-);
-
 export default function Score() {
   const [score, setScore] = useState(null);
   const [ranking, setRanking] = useState(null);
   const [comment, setComment] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [evaluationHistory, setEvaluationHistory] = useState([]);
   const router = useRouter();
 
-  // 模擬從API獲取數據
+  // 整合兩個 useEffect 的功能
   useEffect(() => {
-    // 在實際應用中，這裡會是API調用
-    const fetchData = () => {
+    const fetchData = async () => {
       setIsLoading(true);
-      // 模擬API延遲
-      setTimeout(() => {
+      try {
+        const history = await getUserEvaluationHistory('temp-user-id', 1);
+        if (history && history.length > 0) {
+          const latestEvaluation = history[0];
+          setScore(`${latestEvaluation.totalScore}/100`);
+          setRanking("10,952");
+          setComment(latestEvaluation.detailedFeedback);
+          setEvaluationHistory(history);
+        } else {
+          setScore("96/100");
+          setRanking("10,952");
+          setComment("你的表現非常出色！回答清晰且深入...");
+        }
+      } catch (error) {
+        console.error("獲取評估數據時出錯:", error);
         setScore("96/100");
         setRanking("10,952");
-        setComment(
-          "你的表現非常出色！回答清晰且深入，專業知識豐富。建議可以進一步練習結構化表達和情境案例分享，使回答更加生動。你的表現已經超過了大多數面試者，繼續保持！",
-        );
+        setComment("你的表現非常出色！回答清晰且深入...");
+      } finally {
         setIsLoading(false);
-      }, 500);
+      }
     };
 
     fetchData();
@@ -169,9 +127,6 @@ export default function Score() {
             </div>
 
             {/* 圖表區域 */}
-            // pages/score.jsx 中的修改部分
-
-            // ... 圖表區域部分 ...
             <div className="charts-section">
               <InterviewPerformanceChart evaluationHistory={evaluationHistory} />
             </div>
