@@ -490,7 +490,7 @@ export default function Chat() {
         <div className="progress-container">
           <div className="progress-bar" style={{ width: `${progress}%` }}></div>
           <div className="progress-text">
-            {language === "en" ? "Progress" : "面試進度"}:{" "}
+            {language === "en" ? "Interview Progress" : "面試進度"}:{" "}
             {Math.round(progress)}% ({Math.min(10, Math.floor(progress / 10))}
             /10 {language === "en" ? "questions" : "問題"})
           </div>

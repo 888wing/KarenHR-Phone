@@ -63,9 +63,13 @@ export function generateKarenResponse(
  * @returns {Number} - 進度百分比 (0-100)
  */
 export const calculateInterviewProgress = (messages) => {
-  // 簡單的進度計算邏輯
-  const karenMessages = messages.filter((m) => m.sender === "karen").length;
-  return Math.min(100, karenMessages * 10);
+  // 計算面試進度 (基於對話消息數量)
+  const totalExpectedMessages = 20; // 預期完整面試的消息總數
+  const currentProgress = Math.min(
+    100,
+    (messages.length / totalExpectedMessages) * 100,
+  );
+  return currentProgress;
 };
 
 // 英文回應

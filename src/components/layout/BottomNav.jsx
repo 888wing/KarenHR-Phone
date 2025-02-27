@@ -6,6 +6,7 @@ export default function BottomNav() {
   const router = useRouter();
   const path = router.pathname;
 
+  // 修改 navItems 數組，添加 Dashboard 選項
   const navItems = [
     {
       name: "Karen Pro",
@@ -25,6 +26,20 @@ export default function BottomNav() {
       ),
       path: "/score",
       isActive: path === "/score",
+    },
+    // 新增 Dashboard 選項
+    {
+      name: "Dashboard",
+      icon: (
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path
+            fill="currentColor"
+            d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+          ></path>
+        </svg>
+      ),
+      path: "/dashboard",
+      isActive: path === "/dashboard",
     },
     {
       name: "Setting",
