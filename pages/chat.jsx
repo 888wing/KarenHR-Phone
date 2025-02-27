@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import Layout from "../src/components/Layout";
 import { calculateInterviewProgress } from "../src/lib/api/aiService";
 import RealtimeFeedback from "../components/RealtimeFeedback";
 import {
   evaluateInterview,
   saveEvaluationResult,
 } from "../src/lib/api/evaluationService";
+import { generateResponse } from "../src/lib/api/index";
 
 export default function Chat() {
   const router = useRouter();
@@ -167,167 +169,42 @@ export default function Chat() {
   // 處理發送消息
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
-    setErrorMessage(""); // 清除錯誤消息
 
-    // 檢查使用限制
-    if (usageCount >= monthlyLimit) {
-      setUsageWarning(true);
-      if (!isPremium) {
-        // 對免費用戶顯示升級提示
-        const upgradeConfirmed = window.confirm(
-          `您已達到本月免費版使用限制(${monthlyLimit}次)。升級到付費版以獲得更多使用次數？`,
-        );
-        if (upgradeConfirmed) {
-          setIsPremium(true); // 自動升級到付費版
-          updateUsageData(usageCount, true); // 更新為付費版
-          setMonthlyLimit(50); // 更新限制
-          setUsageWarning(false);
-          // 在實際應用中，這裡還需要處理支付流程
-          alert("升級成功！您現在可以繼續使用。");
-        }
-        return;
-      } else {
-        // 付費用戶超出提示
-        alert(
-          `您已達到本月使用限制(${monthlyLimit}次)。下個月初將重置您的使用次數。`,
-        );
-        return;
-      }
-    }
-
-    // 添加用戶消息
-    const userMessage = {
-      id: messages.length + 1,
-      sender: "user",
-      text: inputMessage,
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputMessage("");
     setIsLoading(true);
-
-    console.log("發送訊息:", {
-      messagesCount: messages.length,
-      karenType,
-      industry,
-      isPremium,
-      language,
-    });
+    setErrorMessage('');
 
     try {
-      // 在用戶發送消息後評估面試表現
-      if (messages.length > 2) {
-        // 有足夠的對話歷史才進行評估
-        setIsAnalyzing(true);
-
-        // 異步評估，不阻塞UI
-        setTimeout(async () => {
-          try {
-            // 收集所有對話
-            const allMessages = [...messages, userMessage];
-
-            // 提取問題列表
-            const questions = allMessages
-              .filter((msg) => msg.sender === "karen")
-              .map((msg) => msg.text);
-
-            // 進行評估
-            const evaluationResult = await evaluateInterview(allMessages, {
-              industry,
-              karenType,
-              questions,
-            });
-
-            // 存儲評估結果 (使用臨時用戶ID)
-            await saveEvaluationResult(
-              "temp-user-id",
-              Date.now().toString(),
-              evaluationResult,
-            );
-          } catch (error) {
-            console.error("評估面試時出錯:", error);
-          } finally {
-            setIsAnalyzing(false);
-          }
-        }, 500);
-      }
-
-      // 通過 API 端點獲取回應
-      const apiResponse = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messages: messages.concat(userMessage),
-          karenType,
-          industry,
-          isPremium,
-          language: language || "zh_TW",
-        }),
-      });
-
-      if (!apiResponse.ok) {
-        const errorData = await apiResponse.json();
-        console.error("API 錯誤:", errorData);
-        throw new Error(errorData.error || "API 請求失敗");
-      }
-
-      const response = await apiResponse.json();
-      console.log("AI 回應:", response);
-
-      const karenMessage = {
-        id: messages.length + 2,
-        sender: "karen",
-        text: response.text,
-        timestamp: response.timestamp,
-      };
-
-      setMessages((prev) => [...prev, karenMessage]);
-
-      // 更新使用次數
-      const newCount = usageCount + 1;
-      setUsageCount(newCount);
-      updateUsageData(newCount, isPremium);
-
-      // 如果進度達到100%，提示用戶可以查看成績
-      if (
-        calculateInterviewProgress([...messages, userMessage, karenMessage]) >=
-        100
-      ) {
-        setTimeout(() => {
-          const confirmed =
-            window.confirm("面試已完成！您想查看您的面試評分嗎？");
-          if (confirmed) {
-            router.push({
-              pathname: "/score",
-              query: {
-                industry,
-                karenType,
-                language: language || "zh_TW",
-                messages: JSON.stringify(
-                  messages.concat([userMessage, karenMessage]),
-                ),
-              },
-            });
-          }
-        }, 1000);
-      }
-    } catch (error) {
-      console.error("生成回應時出錯:", error);
-      // 添加一條錯誤消息
-      setErrorMessage("無法連接到AI服務，請檢查網絡連接或稍後再試");
-      const errorMessage = {
-        id: messages.length + 2,
-        sender: "karen",
-        text:
-          language === "en"
-            ? "Sorry, I cannot respond right now. Please try again later."
-            : "抱歉，我現在無法回應。請稍後再試。",
+      // 添加用戶消息
+      const userMessage = {
+        id: Date.now(),
+        sender: 'user',
+        text: inputMessage,
         timestamp: new Date().toISOString(),
       };
-      setMessages((prev) => [...prev, errorMessage]);
+
+      setMessages(prev => [...prev, userMessage]);
+      setInputMessage('');
+
+      // 獲取 AI 回應
+      const response = await generateResponse(
+        messages.concat(userMessage),
+        karenType,
+        industry,
+        isPremium,
+        language
+      );
+
+      // 添加 Karen 的回應
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        sender: 'karen',
+        text: response.text,
+        timestamp: response.timestamp,
+      }]);
+
+    } catch (error) {
+      console.error('Error in handleSendMessage:', error);
+      setErrorMessage(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -429,54 +306,13 @@ export default function Chat() {
   };
 
   return (
-    <>
+    <Layout isPremium={isPremium}>
       <Head>
-        <title>
-          {language === "en"
-            ? "Interview Chat | AI Karen"
-            : "面試對話 | AI Karen"}
-        </title>
-        <meta
-          name="description"
-          content={
-            language === "en"
-              ? "Simulating an interview with AI Karen"
-              : "正在與AI Karen進行面試模擬"
-          }
-        />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-        />
+        <title>面試對話 | AI Karen</title>
+        <meta name="description" content="AI Karen 面試訓練進行中" />
       </Head>
 
       <div className="mobile-container">
-        {/* 頂部導航欄 */}
-        <div className="top-bar">
-          <div className="profile-pic" onClick={handleHomeClick}>
-            <img src="/profile-pic.png" alt="Profile" />
-          </div>
-          <div className="interview-info">
-            <div className="title-container">
-              <h1 className="app-title">Karen AI</h1>
-            </div>
-            <div className="interview-type">
-              {getIndustryName()} | {getKarenTypeName()}Karen
-            </div>
-          </div>
-          <div
-            className="premium-indicator"
-            onClick={isPremium ? null : handleUpgrade}
-          >
-            {isPremium ? (
-              <span className="premium-badge">PRO</span>
-            ) : (
-              <span className="free-badge">FREE</span>
-            )}
-          </div>
-        </div>
-
-        {/* 使用情況 */}
         <div className="usage-info">
           <div className="usage-count">
             {usageCount}/{monthlyLimit}
@@ -485,8 +321,6 @@ export default function Chat() {
             </span>
           </div>
         </div>
-
-        {/* 進度條 */}
         <div className="progress-container">
           <div className="progress-bar" style={{ width: `${progress}%` }}></div>
           <div className="progress-text">
@@ -495,8 +329,6 @@ export default function Chat() {
             /10 {language === "en" ? "questions" : "問題"})
           </div>
         </div>
-
-        {/* 錯誤消息 */}
         {errorMessage && (
           <div className="error-message">
             <p>{errorMessage}</p>
@@ -505,8 +337,6 @@ export default function Chat() {
             </button>
           </div>
         )}
-
-        {/* 使用警告 */}
         {usageWarning && (
           <div className="usage-warning">
             <p>
@@ -532,8 +362,6 @@ export default function Chat() {
             </button>
           </div>
         )}
-
-        {/* 免費版升級提示 */}
         {!isPremium && !usageWarning && (
           <div className="upgrade-prompt">
             <p>
@@ -546,8 +374,6 @@ export default function Chat() {
             </button>
           </div>
         )}
-
-        {/* 聊天區域 */}
         <div className="chat-area">
           {messages.map((message) => (
             <div
@@ -596,15 +422,11 @@ export default function Chat() {
           )}
           <div ref={messagesEndRef} />
         </div>
-
-        {/* 實時反饋組件 */}
         <RealtimeFeedback
           userInput={inputMessage}
           question={currentQuestion}
           context={{ industry, karenType }}
         />
-
-        {/* 輸入區域 */}
         <div className="input-area">
           <input
             type="text"
@@ -638,8 +460,6 @@ export default function Chat() {
             )}
           </button>
         </div>
-
-        {/* 面試完成提示 */}
         {progress >= 100 && (
           <div className="interview-complete-banner">
             <p>{language === "en" ? "Interview completed!" : "面試已完成！"}</p>
@@ -648,47 +468,9 @@ export default function Chat() {
             </button>
           </div>
         )}
-
-        {/* 底部導航欄 */}
-        <div className="bottom-nav">
-          <div className="nav-item" onClick={handleHomeClick}>
-            <div className="nav-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24">
-                <path
-                  fill="currentColor"
-                  d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
-                ></path>
-              </svg>
-            </div>
-            <span>{language === "en" ? "Home" : "首頁"}</span>
-          </div>
-          <div className="nav-item active">
-            <div className="nav-icon chat-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24">
-                <path
-                  fill="currentColor"
-                  d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"
-                ></path>
-              </svg>
-            </div>
-            <span>{language === "en" ? "Chat" : "對話"}</span>
-          </div>
-          <div className="nav-item" onClick={handleScoreClick}>
-            <div className="nav-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24">
-                <path
-                  fill="currentColor"
-                  d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"
-                ></path>
-              </svg>
-            </div>
-            <span>{language === "en" ? "Score" : "評分"}</span>
-          </div>
-        </div>
       </div>
 
       <style jsx>{`
-        /* 移動裝置容器 */
         .mobile-container {
           max-width: 420px;
           height: 100vh;
@@ -708,94 +490,6 @@ export default function Chat() {
             sans-serif;
         }
 
-        /* 頂部導航欄 */
-        .top-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 15px;
-          background: linear-gradient(to right, #e6b17a, #e4997e);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .profile-pic {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          overflow: hidden;
-          background-color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          border: 2px solid white;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-          transition: transform 0.2s;
-        }
-
-        .profile-pic:hover {
-          transform: scale(1.05);
-        }
-
-        .profile-pic img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .interview-info {
-          flex: 1;
-          text-align: center;
-          color: white;
-        }
-
-        .title-container {
-          margin-bottom: 2px;
-        }
-
-        .app-title {
-          margin: 0;
-          font-size: 18px;
-          font-weight: bold;
-        }
-
-        .interview-type {
-          font-size: 12px;
-          opacity: 0.9;
-        }
-
-        .premium-indicator {
-          margin-left: 10px;
-          cursor: ${isPremium ? "default" : "pointer"};
-        }
-
-        .premium-badge {
-          background-color: white;
-          color: #e6b17a;
-          padding: 5px 10px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: bold;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .free-badge {
-          background-color: white;
-          color: #888;
-          padding: 5px 10px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: bold;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-          transition: all 0.3s;
-        }
-
-        .free-badge:hover {
-          background-color: #f0f0f0;
-          color: #e6b17a;
-        }
-
-        /* 使用情況 */
         .usage-info {
           background-color: rgba(255, 255, 255, 0.7);
           padding: 5px 15px;
@@ -819,7 +513,6 @@ export default function Chat() {
           color: #888;
         }
 
-        /* 進度條 */
         .progress-container {
           background: rgba(255, 255, 255, 0.5);
           height: 6px;
@@ -843,7 +536,6 @@ export default function Chat() {
           border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        /* 錯誤消息 */
         .error-message {
           background-color: #ffebee;
           border-left: 4px solid #d8365d;
@@ -877,7 +569,6 @@ export default function Chat() {
           background-color: #c62828;
         }
 
-        /* 使用警告 */
         .usage-warning {
           position: absolute;
           top: 120px;
@@ -926,7 +617,6 @@ export default function Chat() {
           background-color: #e5e5e5;
         }
 
-        /* 升級提示 */
         .upgrade-prompt {
           background: linear-gradient(135deg, #6e8efb, #a777e3);
           padding: 8px 15px;
@@ -972,7 +662,6 @@ export default function Chat() {
           }
         }
 
-        /* 聊天區域 */
         .chat-area {
           flex: 1;
           padding: 15px;
@@ -1098,7 +787,6 @@ export default function Chat() {
           text-align: right;
         }
 
-        /* 打字指示器 */
         .typing-indicator {
           padding: 12px 15px;
           display: flex;
@@ -1134,7 +822,6 @@ export default function Chat() {
           }
         }
 
-        /* 輸入區域 */
         .input-area {
           padding: 15px;
           display: flex;
@@ -1193,7 +880,6 @@ export default function Chat() {
           box-shadow: none;
         }
 
-        /* 小型加載動畫 */
         .spinner-small {
           border: 2px solid rgba(255, 255, 255, 0.3);
           border-radius: 50%;
@@ -1212,7 +898,6 @@ export default function Chat() {
           }
         }
 
-        /* 面試完成橫幅 */
         .interview-complete-banner {
           position: absolute;
           bottom: 80px;
@@ -1256,64 +941,7 @@ export default function Chat() {
           transform: translateY(-2px);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
-
-        /* 底部導航欄 */
-        .bottom-nav {
-          display: flex;
-          background: linear-gradient(to right, #e6b17a, #e4997e);
-          padding: 12px 0;
-        }
-
-        .nav-item {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 12px;
-          cursor: pointer;
-          transition: all 0.3s;
-          position: relative;
-        }
-
-        .nav-item:hover {
-          transform: translateY(-2px);
-        }
-
-        .nav-icon {
-          margin-bottom: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .chat-icon {
-          position: relative;
-        }
-
-        .chat-icon:after {
-          content: "";
-          position: absolute;
-          width: 10px;
-          height: 10px;
-          background-color: white;
-          border-radius: 50%;
-          top: -3px;
-          right: -3px;
-          border: 2px solid #e6b17a;
-        }
-
-        .nav-item.active::after {
-          content: "";
-          position: absolute;
-          bottom: -12px;
-          width: 40%;
-          height: 3px;
-          background-color: white;
-          border-radius: 3px;
-        }
       `}</style>
-    </>
+    </Layout>
   );
 }

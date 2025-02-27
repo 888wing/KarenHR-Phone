@@ -1,5 +1,6 @@
 // pages/api/chat.js
-import { generateResponse } from "../../src/lib/api";
+import { Configuration, OpenAIApi } from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
  * 面試對話 API 端點
@@ -11,7 +12,7 @@ import { generateResponse } from "../../src/lib/api";
 export default async function handler(req, res) {
   // 僅接受 POST 請求
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "方法不允許" });
+    return res.status(405).json({ message: "Method not allowed" });
   }
 
   try {
@@ -39,22 +40,47 @@ export default async function handler(req, res) {
       language: language || "zh_TW",
     });
 
-    // 調用 AI 回應生成函數
-    const response = await generateResponse(
-      messages,
-      karenType,
-      industry,
-      !!isPremium,
-      language || "zh_TW",
-    );
+    if (isPremium) {
+      // 使用 OpenAI API
+      const configuration = new Configuration({
+        apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+      });
+      const openai = new OpenAIApi(configuration);
 
-    // 返回結果
-    return res.status(200).json(response);
+      const completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: messages.map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        })),
+        temperature: 0.7,
+      });
+
+      return res.status(200).json({
+        text: completion.data.choices[0].message.content,
+        timestamp: new Date().toISOString()
+      });
+
+    } else {
+      // 使用 Gemini API
+      const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+
+      const result = await model.generateContent(messages[messages.length - 1].text);
+      const response = await result.response;
+      
+      return res.status(200).json({
+        text: response.text(),
+        timestamp: new Date().toISOString()
+      });
+    }
+
   } catch (error) {
-    console.error("面試對話API錯誤:", error);
+    console.error('Error in chat API:', error);
     return res.status(500).json({
-      error: "處理請求時發生錯誤",
-      message: error.message || "未知錯誤",
+      message: language === 'en' 
+        ? 'Unable to connect to AI service. Please check your network connection or try again later.'
+        : '無法連接到AI服務，請檢查網絡連接或稍後再試'
     });
   }
 }

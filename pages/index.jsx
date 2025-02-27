@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import Layout from "../src/components/Layout";
 
 export default function Home() {
   const router = useRouter();
@@ -98,7 +99,7 @@ export default function Home() {
   };
 
   return (
-    <>
+    <Layout isPremium={isPremium}>
       <Head>
         <title>AI Karen | 面試訓練助手</title>
         <meta name="description" content="透過AI Karen提升您的面試技巧" />
@@ -109,21 +110,8 @@ export default function Home() {
       </Head>
 
       <div className="mobile-container">
-        {/* 頂部導航欄 */}
-        <div className="top-bar">
-          <div className="profile-pic">
-            <img src="/profile-pic.png" alt="Profile" />
-          </div>
-          <div className="title-container">
-            <h1 className="app-title">Karen AI</h1>
-            <p className="app-subtitle">面試訓練助手</p>
-          </div>
-          <div className="premium-badge" onClick={handleUpgrade}>
-            {isPremium ? "PRO" : "免費版"}
-          </div>
-        </div>
-
-        {/* 升級橫幅 */}
+        {/* 移除舊的 top-bar，因為 Layout 已經提供了 */}
+        {/* 保留其他內容 */}
         {!isPremium && (
           <div className="upgrade-banner">
             <div className="banner-content">
@@ -137,8 +125,6 @@ export default function Home() {
             </div>
           </div>
         )}
-
-        {/* 使用情況顯示 */}
         <div className="usage-display">
           <div className="usage-text">
             本月已使用:{" "}
@@ -155,8 +141,6 @@ export default function Home() {
             ></div>
           </div>
         </div>
-
-        {/* 主要內容 */}
         <div className="main-content">
           <div className="mic-button" onClick={handleStartInterview}>
             <div className="mic-icon">
@@ -258,50 +242,6 @@ export default function Home() {
             )}
           </div>
         </div>
-
-        {/* 底部導航欄 */}
-        <div className="bottom-nav">
-          <div className="nav-item active">
-            <div className="nav-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24">
-                <path
-                  fill="currentColor"
-                  d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
-                ></path>
-              </svg>
-            </div>
-            <span>首頁</span>
-          </div>
-          <div className="nav-item" onClick={handleStartInterview}>
-            <div className="nav-icon">
-              <svg viewBox="0 0 24 24" width="24" height="24">
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  fill="currentColor"
-                  fillOpacity="0.2"
-                />
-                <path
-                  fill="currentColor"
-                  d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
-                />
-              </svg>
-            </div>
-            <span>開始</span>
-          </div>
-          <div className="nav-item" onClick={handleUpgrade}>
-            <div className={`nav-icon ${isPremium ? "premium-active" : ""}`}>
-              <svg viewBox="0 0 24 24" width="24" height="24">
-                <path
-                  fill="currentColor"
-                  d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"
-                />
-              </svg>
-            </div>
-            <span>{isPremium ? "Pro" : "升級"}</span>
-          </div>
-        </div>
       </div>
 
       <style jsx>{`
@@ -323,72 +263,6 @@ export default function Home() {
             Ubuntu,
             Cantarell,
             sans-serif;
-        }
-
-        /* 頂部導航欄 */
-        .top-bar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 15px;
-          background: linear-gradient(to right, #e6b17a, #e4997e);
-          border-bottom-left-radius: 15px;
-          border-bottom-right-radius: 15px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .profile-pic {
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          overflow: hidden;
-          background-color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 2px solid white;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .profile-pic img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .title-container {
-          text-align: center;
-          color: white;
-        }
-
-        .app-title {
-          margin: 0;
-          font-size: 22px;
-          font-weight: bold;
-          letter-spacing: 1px;
-        }
-
-        .app-subtitle {
-          margin: 0;
-          font-size: 12px;
-          opacity: 0.9;
-        }
-
-        .premium-badge {
-          background-color: white;
-          color: #e6b17a;
-          padding: 5px 12px;
-          border-radius: 15px;
-          font-size: 12px;
-          font-weight: bold;
-          cursor: pointer;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-          transition: all 0.3s ease;
-        }
-
-        .premium-badge:hover {
-          transform: scale(1.05);
-          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
         }
 
         /* 升級橫幅 */
@@ -571,54 +445,7 @@ export default function Home() {
           border-color: #e6b17a;
           box-shadow: 0 0 0 2px rgba(230, 177, 122, 0.2);
         }
-
-        /* 底部導航欄 */
-        .bottom-nav {
-          display: flex;
-          background: linear-gradient(to right, #e6b17a, #e4997e);
-          padding: 12px 0;
-          border-top-left-radius: 15px;
-          border-top-right-radius: 15px;
-        }
-
-        .nav-item {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 12px;
-          cursor: pointer;
-          transition: all 0.3s;
-          position: relative;
-        }
-
-        .nav-item:hover {
-          transform: translateY(-2px);
-        }
-
-        .nav-icon {
-          margin-bottom: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .nav-item.active::after {
-          content: "";
-          position: absolute;
-          bottom: -12px;
-          width: 40%;
-          height: 3px;
-          background-color: white;
-          border-radius: 3px;
-        }
-
-        .premium-active {
-          color: #ffd700;
-        }
       `}</style>
-    </>
+    </Layout>
   );
 }

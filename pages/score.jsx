@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
-import TopBar from "../src/components/layout/TopBar";
-import BottomNav from "../src/components/layout/BottomNav";
-
+import Layout from "../src/components/Layout";
 import { getUserEvaluationHistory } from "../src/lib/api/evaluationService";
 
 // 動態導入圖表組件
@@ -152,59 +150,55 @@ export default function Score() {
   };
 
   return (
-    <div className="mobile-container">
-      {/* 頂部控制欄 - 使用現有的TopBar組件 */}
-      <TopBar />
-
-      {/* 得分區域 */}
-      <div className="score-container">
-        {isLoading ? (
-          <div className="loading-indicator">
-            <div className="spinner"></div>
-            <p>加載評估結果...</p>
-          </div>
-        ) : (
-          <>
-            <div className="score-header">
-              <div className="score-display">
-                <div className="big-score">{score}</div>
-                {ranking && (
-                  <div className="ranking">領先全球 {ranking} 位面試者</div>
-                )}
+    <Layout isPremium={isPremium}>
+      <div className="mobile-container">
+        {/* 得分區域 */}
+        <div className="score-container">
+          {isLoading ? (
+            <div className="loading-indicator">
+              <div className="spinner"></div>
+              <p>加載評估結果...</p>
+            </div>
+          ) : (
+            <>
+              <div className="score-header">
+                <div className="score-display">
+                  <div className="big-score">{score}</div>
+                  {ranking && (
+                    <div className="ranking">領先全球 {ranking} 位面試者</div>
+                  )}
+                </div>
+                <div className="user-avatar">
+                  <div className="avatar-inner">A</div>
+                </div>
               </div>
-              <div className="user-avatar">
-                <div className="avatar-inner">A</div>
+
+              {/* 圖表區域 */}
+              <div className="charts-section">
+                <InterviewPerformanceChart
+                  evaluationHistory={evaluationHistory}
+                  performanceHistory={getPerformanceHistory()}
+                  currentScores={getCurrentScores()}
+                />
               </div>
-            </div>
 
-            {/* 圖表區域 */}
-            <div className="charts-section">
-              <InterviewPerformanceChart
-                evaluationHistory={evaluationHistory}
-                performanceHistory={getPerformanceHistory()}
-                currentScores={getCurrentScores()}
-              />
-            </div>
+              {/* Karen的評論 */}
+              <div className="comment-section">
+                <h3>Karen的點評</h3>
+                <div className="comment-box">{comment}</div>
+              </div>
 
-            {/* Karen的評論 */}
-            <div className="comment-section">
-              <h3>Karen的點評</h3>
-              <div className="comment-box">{comment}</div>
-            </div>
-
-            {/* 操作按鈕 */}
-            <div className="action-buttons">
-              <button className="action-button primary">分享結果</button>
-              <button className="action-button secondary" onClick={handleClose}>
-                返回首頁
-              </button>
-            </div>
-          </>
-        )}
+              {/* 操作按鈕 */}
+              <div className="action-buttons">
+                <button className="action-button primary">分享結果</button>
+                <button className="action-button secondary" onClick={handleClose}>
+                  返回首頁
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-
-      {/* 底部導航欄 - 使用現有的BottomNav組件 */}
-      <BottomNav />
 
       <style jsx>{`
         /* 移動裝置容器 */
@@ -376,6 +370,6 @@ export default function Score() {
           background-color: #e5e5e5;
         }
       `}</style>
-    </div>
+    </Layout>
   );
 }

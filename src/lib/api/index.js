@@ -21,31 +21,43 @@ export const generateResponse = async (
   language,
 ) => {
   try {
-    console.log("generateResponse 參數:", {
-      messageCount: messages.length,
-      karenType,
-      industry,
-      isPremium,
-      language,
+    const apiKey = isPremium 
+      ? process.env.NEXT_PUBLIC_OPENAI_API_KEY 
+      : process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
+    if (!apiKey) {
+      throw new Error('API key not found');
+    }
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        messages,
+        karenType,
+        industry,
+        isPremium,
+        language
+      })
     });
 
-    if (isPremium) {
-      // 付費版使用 ChatGPT
-      console.log("使用 ChatGPT API");
-      return await getChatGPTResponse(messages, karenType, industry, language);
-    } else {
-      // 免費版使用 Gemini API
-      console.log("使用 Gemini API");
-      try {
-        return await getGeminiResponse(messages, karenType, industry, language);
-      } catch (geminiError) {
-        console.error("Gemini API 調用失敗，使用本地回應:", geminiError);
-        return generateKarenResponse(messages, karenType, language);
-      }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'API request failed');
     }
+
+    const data = await response.json();
+    return data;
+
   } catch (error) {
-    console.error("生成回應時出錯:", error);
-    // 如果 API 調用失敗，使用本地生成的回應作為備用
-    return generateKarenResponse(messages, karenType, language);
+    console.error('Error in generateResponse:', error);
+    throw new Error(
+      language === 'en' 
+        ? 'Unable to connect to AI service. Please check your network connection or try again later.'
+        : '無法連接到AI服務，請檢查網絡連接或稍後再試'
+    );
   }
 };

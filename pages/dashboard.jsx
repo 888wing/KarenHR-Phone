@@ -602,7 +602,7 @@ export default function Dashboard() {
   };
 
   return (
-    <>
+    <Layout isPremium={isPremium}>
       <Head>
         <title>面試表現儀表板 | AI Karen</title>
         <meta
@@ -615,328 +615,326 @@ export default function Dashboard() {
         />
       </Head>
 
-      <Layout>
-        <div className="dashboard-container">
-          <div className="dashboard-header">
-            <h1>面試表現儀表板</h1>
-            <button
-              className="new-interview-button"
-              onClick={handleNewInterview}
-            >
-              新面試
-            </button>
-          </div>
-
-          <div className="dashboard-content">
-            {/* 左側面板 - 面試列表 */}
-            <div className="sidebar">{renderInterviewList()}</div>
-
-            {/* 右側面板 - 主要內容 */}
-            <div className="main-panel">
-              {/* 標籤導航 */}
-              <div className="tabs">
-                <button
-                  className={`tab ${activeTab === "overview" ? "active" : ""}`}
-                  onClick={() => setActiveTab("overview")}
-                >
-                  概覽
-                </button>
-                <button
-                  className={`tab ${activeTab === "history" ? "active" : ""}`}
-                  onClick={() => setActiveTab("history")}
-                >
-                  歷史表現
-                </button>
-                <button
-                  className={`tab ${activeTab === "strengths" ? "active" : ""}`}
-                  onClick={() => setActiveTab("strengths")}
-                >
-                  強弱分析
-                </button>
-                <button
-                  className={`tab ${activeTab === "comparison" ? "active" : ""}`}
-                  onClick={() => setActiveTab("comparison")}
-                >
-                  行業對比
-                </button>
-                <button
-                  className={`tab ${activeTab === "suggestions" ? "active" : ""}`}
-                  onClick={() => setActiveTab("suggestions")}
-                >
-                  改進建議
-                </button>
-              </div>
-
-              {/* 標籤內容 */}
-              <div className="tab-content">{renderTabContent()}</div>
-            </div>
-          </div>
+      <div className="dashboard-container">
+        <div className="dashboard-header">
+          <h1>面試表現儀表板</h1>
+          <button
+            className="new-interview-button"
+            onClick={handleNewInterview}
+          >
+            新面試
+          </button>
         </div>
 
-        <style jsx>{`
-          .dashboard-container {
-            padding: 20px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-          }
+        <div className="dashboard-content">
+          {/* 左側面板 - 面試列表 */}
+          <div className="sidebar">{renderInterviewList()}</div>
 
-          .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-          }
+          {/* 右側面板 - 主要內容 */}
+          <div className="main-panel">
+            {/* 標籤導航 */}
+            <div className="tabs">
+              <button
+                className={`tab ${activeTab === "overview" ? "active" : ""}`}
+                onClick={() => setActiveTab("overview")}
+              >
+                概覽
+              </button>
+              <button
+                className={`tab ${activeTab === "history" ? "active" : ""}`}
+                onClick={() => setActiveTab("history")}
+              >
+                歷史表現
+              </button>
+              <button
+                className={`tab ${activeTab === "strengths" ? "active" : ""}`}
+                onClick={() => setActiveTab("strengths")}
+              >
+                強弱分析
+              </button>
+              <button
+                className={`tab ${activeTab === "comparison" ? "active" : ""}`}
+                onClick={() => setActiveTab("comparison")}
+              >
+                行業對比
+              </button>
+              <button
+                className={`tab ${activeTab === "suggestions" ? "active" : ""}`}
+                onClick={() => setActiveTab("suggestions")}
+              >
+                改進建議
+              </button>
+            </div>
 
-          .dashboard-header h1 {
-            font-size: 24px;
-            color: #333;
-            margin: 0;
-          }
+            {/* 標籤內容 */}
+            <div className="tab-content">{renderTabContent()}</div>
+          </div>
+        </div>
+      </div>
 
-          .new-interview-button {
-            background: linear-gradient(to right, #e6b17a, #e4997e);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s;
-          }
+      <style jsx>{`
+        .dashboard-container {
+          padding: 20px;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        }
 
-          .new-interview-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-          }
+        .dashboard-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
 
+        .dashboard-header h1 {
+          font-size: 24px;
+          color: #333;
+          margin: 0;
+        }
+
+        .new-interview-button {
+          background: linear-gradient(to right, #e6b17a, #e4997e);
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-weight: bold;
+          cursor: pointer;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s;
+        }
+
+        .new-interview-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .dashboard-content {
+          display: flex;
+          flex-direction: column; /* 在移動設備上垂直堆疊 */
+          flex: 1;
+          min-height: 0;
+        }
+
+        @media (min-width: 768px) {
           .dashboard-content {
-            display: flex;
-            flex-direction: column; /* 在移動設備上垂直堆疊 */
-            flex: 1;
-            min-height: 0;
+            flex-direction: row; /* 在桌面設備上水平排列 */
           }
+        }
 
-          @media (min-width: 768px) {
-            .dashboard-content {
-              flex-direction: row; /* 在桌面設備上水平排列 */
-            }
-          }
+        .sidebar {
+          width: 100%; /* 在移動設備上佔據全寬 */
+          min-width: auto;
+          background-color: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          padding: 15px;
+          margin-bottom: 20px;
+          margin-right: 0;
+          max-height: 200px; /* 限制在移動設備上的高度 */
+          overflow-y: auto;
+        }
 
+        @media (min-width: 768px) {
           .sidebar {
-            width: 100%; /* 在移動設備上佔據全寬 */
-            min-width: auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            padding: 15px;
-            margin-bottom: 20px;
-            margin-right: 0;
-            max-height: 200px; /* 限制在移動設備上的高度 */
-            overflow-y: auto;
+            width: 25%;
+            min-width: 250px;
+            margin-right: 20px;
+            margin-bottom: 0;
+            max-height: none;
           }
+        }
 
-          @media (min-width: 768px) {
-            .sidebar {
-              width: 25%;
-              min-width: 250px;
-              margin-right: 20px;
-              margin-bottom: 0;
-              max-height: none;
-            }
-          }
+        .main-panel {
+          flex: 1;
+          width: 100%; /* 確保在移動設備上佔據全寬 */
+          background-color: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
 
-          .main-panel {
-            flex: 1;
-            width: 100%; /* 確保在移動設備上佔據全寬 */
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-          }
+        .tabs {
+          display: flex;
+          flex-wrap: wrap; /* 允許在移動設備上換行 */
+          background-color: #f8f8f8;
+          border-bottom: 1px solid #eaeaea;
+          padding: 0 15px;
+        }
 
-          .tabs {
-            display: flex;
-            flex-wrap: wrap; /* 允許在移動設備上換行 */
-            background-color: #f8f8f8;
-            border-bottom: 1px solid #eaeaea;
-            padding: 0 15px;
-          }
+        .tab {
+          flex: 1 0 auto; /* 允許項目調整大小 */
+          padding: 10px 12px; /* 縮小填充以適應移動設備 */
+          background: none;
+          border: none;
+          font-size: 13px; /* 縮小字體 */
+          font-weight: 500;
+          color: #666;
+          cursor: pointer;
+          transition: all 0.2s;
+          position: relative;
+          white-space: nowrap; /* 防止文本換行 */
+        }
 
+        @media (min-width: 768px) {
           .tab {
-            flex: 1 0 auto; /* 允許項目調整大小 */
-            padding: 10px 12px; /* 縮小填充以適應移動設備 */
-            background: none;
-            border: none;
-            font-size: 13px; /* 縮小字體 */
-            font-weight: 500;
-            color: #666;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-            white-space: nowrap; /* 防止文本換行 */
-          }
-
-          @media (min-width: 768px) {
-            .tab {
-              padding: 12px 15px;
-              font-size: 14px;
-            }
-          }
-
-          .tab:hover {
-            color: #e6b17a;
-          }
-
-          .tab.active {
-            color: #e6b17a;
-          }
-
-          .tab.active::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 15%;
-            width: 70%;
-            height: 3px;
-            background-color: #e6b17a;
-            border-radius: 3px 3px 0 0;
-          }
-
-          .tab-content {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-          }
-
-          /* 適應移動設備的面試列表 */
-          .interview-list h2 {
-            font-size: 16px;
-            margin-bottom: 12px;
-          }
-
-          @media (min-width: 768px) {
-            .interview-list h2 {
-              font-size: 18px;
-              margin-bottom: 15px;
-            }
-          }
-
-          .interview-item {
-            padding: 10px;
-            margin-bottom: 8px;
-          }
-
-          @media (min-width: 768px) {
-            .interview-item {
-              padding: 12px;
-              margin-bottom: 10px;
-            }
-          }
-
-          /* 適應移動設備的圖表區域 */
-          .charts-section {
-            overflow-x: auto;
-          }
-
-          /* 修復移動設備上圖表溢出問題 */
-          .overview-container,
-          .history-container,
-          .strengths-weaknesses-container,
-          .industry-comparison-container,
-          .improvement-suggestions-container {
-            max-width: 100%;
-            overflow-x: hidden;
-          }
-
-          @media (max-width: 480px) {
-            .overview-header {
-              flex-direction: column;
-              align-items: flex-start;
-            }
-
-            .score-display {
-              margin-bottom: 15px;
-            }
-          }
-
-          .loading-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #666;
-          }
-
-          .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #e6aa63;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-          }
-
-          @keyframes spin {
-            0% {
-              transform: rotate(0deg);
-            }
-            100% {
-              transform: rotate(360deg);
-            }
-          }
-
-          .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #666;
-            text-align: center;
-            padding: 20px;
-          }
-
-          .empty-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-          }
-
-          .empty-state h3 {
-            margin: 0 0 10px 0;
-            font-size: 18px;
-            color: #333;
-          }
-
-          .empty-state p {
-            margin: 0 0 20px 0;
+            padding: 12px 15px;
             font-size: 14px;
-            max-width: 400px;
+          }
+        }
+
+        .tab:hover {
+          color: #e6b17a;
+        }
+
+        .tab.active {
+          color: #e6b17a;
+        }
+
+        .tab.active::after {
+          content: "";
+          position: absolute;
+          bottom: 0;
+          left: 15%;
+          width: 70%;
+          height: 3px;
+          background-color: #e6b17a;
+          border-radius: 3px 3px 0 0;
+        }
+
+        .tab-content {
+          flex: 1;
+          padding: 20px;
+          overflow-y: auto;
+        }
+
+        /* 適應移動設備的面試列表 */
+        .interview-list h2 {
+          font-size: 16px;
+          margin-bottom: 12px;
+        }
+
+        @media (min-width: 768px) {
+          .interview-list h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+          }
+        }
+
+        .interview-item {
+          padding: 10px;
+          margin-bottom: 8px;
+        }
+
+        @media (min-width: 768px) {
+          .interview-item {
+            padding: 12px;
+            margin-bottom: 10px;
+          }
+        }
+
+        /* 適應移動設備的圖表區域 */
+        .charts-section {
+          overflow-x: auto;
+        }
+
+        /* 修復移動設備上圖表溢出問題 */
+        .overview-container,
+        .history-container,
+        .strengths-weaknesses-container,
+        .industry-comparison-container,
+        .improvement-suggestions-container {
+          max-width: 100%;
+          overflow-x: hidden;
+        }
+
+        @media (max-width: 480px) {
+          .overview-header {
+            flex-direction: column;
+            align-items: flex-start;
           }
 
-          .start-button {
-            background: linear-gradient(to right, #e6b17a, #e4997e);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s;
+          .score-display {
+            margin-bottom: 15px;
           }
+        }
 
-          .start-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        .loading-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          color: #666;
+        }
+
+        .spinner {
+          border: 4px solid rgba(0, 0, 0, 0.1);
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border-left-color: #e6aa63;
+          animation: spin 1s linear infinite;
+          margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
           }
-        `}</style>
-      </Layout>
-    </>
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          color: #666;
+          text-align: center;
+          padding: 20px;
+        }
+
+        .empty-icon {
+          font-size: 48px;
+          margin-bottom: 15px;
+        }
+
+        .empty-state h3 {
+          margin: 0 0 10px 0;
+          font-size: 18px;
+          color: #333;
+        }
+
+        .empty-state p {
+          margin: 0 0 20px 0;
+          font-size: 14px;
+          max-width: 400px;
+        }
+
+        .start-button {
+          background: linear-gradient(to right, #e6b17a, #e4997e);
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 20px;
+          font-weight: bold;
+          cursor: pointer;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s;
+        }
+
+        .start-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+      `}</style>
+    </Layout>
   );
 }
