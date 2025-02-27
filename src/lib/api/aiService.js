@@ -4,10 +4,15 @@
  * 本地生成面試官回應的函數 (API失敗時的備用方案)
  * @param {Array} messages - 對話歷史
  * @param {String} personality - Karen類型
- * @param {String} language - 語言 (zh或en)
+ * @param {String} language - 語言 (zh_TW或en)
  * @returns {Object} - 生成的回應
  */
-export function generateKarenResponse(messages, personality, language = "zh") {
+export function generateKarenResponse(
+  messages,
+  personality,
+  language = "zh_TW",
+) {
+  console.log("使用本地回應生成");
   // 獲取語言相關的問題和回應
   const responses =
     language === "en" ? getEnglishResponses() : getChineseResponses();
@@ -59,77 +64,9 @@ export function generateKarenResponse(messages, personality, language = "zh") {
  */
 export const calculateInterviewProgress = (messages) => {
   // 簡單的進度計算邏輯
-  const karenMessages = messages.filter(m => m.sender === "karen").length;
+  const karenMessages = messages.filter((m) => m.sender === "karen").length;
   return Math.min(100, karenMessages * 10);
 };
-
-/**
- * 獲取面試得分
- * @param {Array} messages - 對話歷史
- * @param {String} language - 語言 (zh或en)
- * @returns {Object} - 面試得分和評論
- */
-export function getInterviewScore(messages, language = "zh") {
-  // 計算用戶回答的平均長度
-  const userMessages = messages.filter((m) => m.sender === "user");
-  if (userMessages.length === 0) {
-    return {
-      score: 0,
-      comment: language === "en" ? "Interview not started yet" : "面試尚未開始",
-    };
-  }
-
-  const totalLength = userMessages.reduce(
-    (sum, msg) => sum + msg.text.length,
-    0,
-  );
-  const avgLength = totalLength / userMessages.length;
-
-  // 基於回答長度和數量計算基礎分數
-  let baseScore = Math.min(
-    100,
-    Math.max(60, avgLength / 5 + userMessages.length * 5),
-  );
-
-  // 隨機調整，使得分數看起來更真實
-  const randomAdjustment = Math.floor(Math.random() * 10) - 5; // -5 到 +4
-  const finalScore = Math.min(100, Math.max(60, baseScore + randomAdjustment));
-
-  // 根據分數生成評論
-  let comment = "";
-
-  if (language === "en") {
-    if (finalScore >= 90) {
-      comment =
-        "Excellent interview performance! Your answers were comprehensive, specific, and demonstrated rich relevant experience.";
-    } else if (finalScore >= 80) {
-      comment =
-        "Good performance. Most of your answers were on point, but some areas could use more detail.";
-    } else if (finalScore >= 70) {
-      comment =
-        "Satisfactory overall, but you need to focus more on providing concrete examples and experiences in your answers.";
-    } else {
-      comment =
-        "Your answers need to be more substantial and specific. Consider preparing more related experiences and cases.";
-    }
-  } else {
-    if (finalScore >= 90) {
-      comment = "面試表現優秀！您的回答全面、具體，並且展示了豐富的相關經驗。";
-    } else if (finalScore >= 80) {
-      comment =
-        "表現良好。您的大部分回答都很到位，但有些地方可以提供更多細節。";
-    } else if (finalScore >= 70) {
-      comment = "整體表現尚可，但需要更注重在回答中提供具體的例子和經驗。";
-    } else {
-      comment = "您的回答需要更加充實和具體。建議準備更多相關經驗和案例。";
-    }
-  }
-
-  return {
-    score: finalScore,
-    comment: comment,
-  };
-}
 
 // 英文回應
 function getEnglishResponses() {

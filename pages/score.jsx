@@ -6,57 +6,11 @@ import BottomNav from "../src/components/layout/BottomNav";
 
 import { getUserEvaluationHistory } from "../src/lib/api/evaluationService";
 
-const InterviewPerformanceChart = ({ evaluationHistory }) => {
-  // 如果有提供評估歷史，使用真實數據；否則使用模擬數據
-  const useRealData = evaluationHistory && evaluationHistory.length > 0;
-
-  // 處理真實數據轉換為圖表格式
-  const getPerformanceHistory = () => {
-    if (useRealData) {
-      return evaluationHistory.map((evaluation, index) => {
-        const date = new Date(evaluation.timestamp);
-        const formatDate = `${date.getMonth() + 1}/${date.getDate()}`;
-
-        return {
-          date: formatDate,
-          score: evaluation.totalScore,
-          clarity: evaluation.categoryScores.clarity,
-          confidence: evaluation.categoryScores.confidence,
-          relevance: evaluation.categoryScores.relevance,
-          technical: evaluation.categoryScores.technical,
-          communication: evaluation.categoryScores.communication
-        };
-      }).reverse(); // 確保時間順序是從早到晚
-    } else {
-      // 返回模擬數據
-      return [
-        // ... 現有模擬數據 ...
-      ];
-    }
-  };
-
-  // 獲取最新評估的詳細評分
-  const getCurrentScores = () => {
-    if (useRealData && evaluationHistory.length > 0) {
-      const latest = evaluationHistory[0];
-      return [
-        { category: '回答清晰度', value: latest.categoryScores.clarity },
-        { category: '自信程度', value: latest.categoryScores.confidence },
-        { category: '內容相關性', value: latest.categoryScores.relevance },
-        { category: '技術知識', value: latest.categoryScores.technical },
-        { category: '溝通技巧', value: latest.categoryScores.communication }
-      ];
-    } else {
-      // 返回模擬數據
-      return [
-        // ... 現有模擬數據 ...
-      ];
-    }
-  };
-
-  // 計算實際數據
-  const performanceHistory = getPerformanceHistory();
-  const currentScores = getCurrentScores();
+// 動態導入圖表組件
+const InterviewPerformanceChart = dynamic(
+  () => import("../src/components/score/InterviewPerformanceChart"),
+  { ssr: false },
+);
 
 export default function Score() {
   const [score, setScore] = useState(null);
@@ -66,12 +20,109 @@ export default function Score() {
   const [evaluationHistory, setEvaluationHistory] = useState([]);
   const router = useRouter();
 
+  // 處理評估歷史數據的函數
+  const getPerformanceHistory = () => {
+    if (evaluationHistory && evaluationHistory.length > 0) {
+      return evaluationHistory
+        .map((evaluation, index) => {
+          const date = new Date(evaluation.timestamp);
+          const formatDate = `${date.getMonth() + 1}/${date.getDate()}`;
+
+          return {
+            date: formatDate,
+            score: evaluation.totalScore,
+            clarity: evaluation.categoryScores.clarity,
+            confidence: evaluation.categoryScores.confidence,
+            relevance: evaluation.categoryScores.relevance,
+            technical: evaluation.categoryScores.technical,
+            communication: evaluation.categoryScores.communication,
+          };
+        })
+        .reverse(); // 確保時間順序是從早到晚
+    } else {
+      // 返回模擬數據
+      return [
+        {
+          date: "2/15",
+          score: 68,
+          clarity: 65,
+          confidence: 60,
+          relevance: 75,
+          technical: 70,
+        },
+        {
+          date: "2/22",
+          score: 75,
+          clarity: 70,
+          confidence: 72,
+          relevance: 80,
+          technical: 75,
+        },
+        {
+          date: "3/01",
+          score: 82,
+          clarity: 83,
+          confidence: 75,
+          relevance: 85,
+          technical: 80,
+        },
+        {
+          date: "3/08",
+          score: 78,
+          clarity: 85,
+          confidence: 80,
+          relevance: 75,
+          technical: 72,
+        },
+        {
+          date: "3/15",
+          score: 88,
+          clarity: 90,
+          confidence: 85,
+          relevance: 88,
+          technical: 85,
+        },
+        {
+          date: "3/22",
+          score: 96,
+          clarity: 95,
+          confidence: 92,
+          relevance: 95,
+          technical: 97,
+        },
+      ];
+    }
+  };
+
+  // 獲取最新評估的詳細評分
+  const getCurrentScores = () => {
+    if (evaluationHistory && evaluationHistory.length > 0) {
+      const latest = evaluationHistory[0];
+      return [
+        { category: "回答清晰度", value: latest.categoryScores.clarity },
+        { category: "自信程度", value: latest.categoryScores.confidence },
+        { category: "內容相關性", value: latest.categoryScores.relevance },
+        { category: "技術知識", value: latest.categoryScores.technical },
+        { category: "溝通技巧", value: latest.categoryScores.communication },
+      ];
+    } else {
+      // 返回模擬數據
+      return [
+        { category: "回答清晰度", value: 95 },
+        { category: "自信程度", value: 92 },
+        { category: "內容相關性", value: 95 },
+        { category: "技術知識", value: 97 },
+        { category: "溝通技巧", value: 94 },
+      ];
+    }
+  };
+
   // 整合兩個 useEffect 的功能
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const history = await getUserEvaluationHistory('temp-user-id', 1);
+        const history = await getUserEvaluationHistory("temp-user-id", 1);
         if (history && history.length > 0) {
           const latestEvaluation = history[0];
           setScore(`${latestEvaluation.totalScore}/100`);
@@ -128,7 +179,11 @@ export default function Score() {
 
             {/* 圖表區域 */}
             <div className="charts-section">
-              <InterviewPerformanceChart evaluationHistory={evaluationHistory} />
+              <InterviewPerformanceChart
+                evaluationHistory={evaluationHistory}
+                performanceHistory={getPerformanceHistory()}
+                currentScores={getCurrentScores()}
+              />
             </div>
 
             {/* Karen的評論 */}

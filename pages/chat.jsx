@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { generateResponse } from "../src/lib/api";
 import { calculateInterviewProgress } from "../src/lib/api/aiService";
 import RealtimeFeedback from "../components/RealtimeFeedback";
 import {
@@ -22,6 +21,7 @@ export default function Chat() {
   const [usageWarning, setUsageWarning] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("");
+  const [errorMessage, setErrorMessage] = useState(""); // 添加錯誤消息狀態
   const messagesEndRef = useRef(null);
 
   // 初始化狀態
@@ -96,21 +96,37 @@ export default function Chat() {
   // 初始化聊天
   const initializeChat = async () => {
     setIsLoading(true);
+    setErrorMessage(""); // 清除錯誤消息
     try {
-      // 使用空消息列表獲取初始問候語
-      const response = await generateResponse(
-        [],
-        karenType,
-        industry,
-        isPremium,
-        language || "zh_TW",
-      );
+      // 使用 API 獲取初始問候語
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [],
+          karenType,
+          industry,
+          isPremium,
+          language: language || "zh_TW",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("API初始化錯誤:", errorData);
+        throw new Error(errorData.error || "API初始化失敗");
+      }
+
+      const data = await response.json();
+      console.log("初始化回應:", data);
 
       const initialMessage = {
         id: 1,
         sender: "karen",
-        text: response.text || getDefaultGreeting(language),
-        timestamp: response.timestamp || new Date().toISOString(),
+        text: data.text || getDefaultGreeting(language),
+        timestamp: data.timestamp || new Date().toISOString(),
       };
 
       setMessages([initialMessage]);
@@ -123,6 +139,7 @@ export default function Chat() {
         timestamp: new Date().toISOString(),
       };
       setMessages([fallbackMessage]);
+      setErrorMessage("連接到AI服務時發生錯誤，使用預設問候語");
     } finally {
       setIsLoading(false);
     }
@@ -150,6 +167,7 @@ export default function Chat() {
   // 處理發送消息
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
+    setErrorMessage(""); // 清除錯誤消息
 
     // 檢查使用限制
     if (usageCount >= monthlyLimit) {
@@ -190,11 +208,11 @@ export default function Chat() {
     setIsLoading(true);
 
     console.log("發送訊息:", {
-      messages,
+      messagesCount: messages.length,
       karenType,
       industry,
       isPremium,
-      language
+      language,
     });
 
     try {
@@ -235,14 +253,28 @@ export default function Chat() {
         }, 500);
       }
 
-      // 根據用戶類型使用不同API
-      const response = await generateResponse(
-        messages.concat(userMessage),
-        karenType,
-        industry,
-        isPremium,
-        language || "zh_TW",
-      );
+      // 通過 API 端點獲取回應
+      const apiResponse = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: messages.concat(userMessage),
+          karenType,
+          industry,
+          isPremium,
+          language: language || "zh_TW",
+        }),
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
+        console.error("API 錯誤:", errorData);
+        throw new Error(errorData.error || "API 請求失敗");
+      }
+
+      const response = await apiResponse.json();
       console.log("AI 回應:", response);
 
       const karenMessage = {
@@ -285,6 +317,7 @@ export default function Chat() {
     } catch (error) {
       console.error("生成回應時出錯:", error);
       // 添加一條錯誤消息
+      setErrorMessage("無法連接到AI服務，請檢查網絡連接或稍後再試");
       const errorMessage = {
         id: messages.length + 2,
         sender: "karen",
@@ -381,6 +414,20 @@ export default function Chat() {
     return karenTypes[karenType] || (language === "en" ? "Standard" : "標準型");
   };
 
+  // 重試連接
+  const handleRetry = () => {
+    if (messages.length === 0) {
+      initializeChat();
+    } else {
+      // 移除最後一條錯誤消息（如果有的話）
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage && lastMessage.sender === "karen") {
+        setMessages((prev) => prev.slice(0, -1));
+        handleSendMessage();
+      }
+    }
+  };
+
   return (
     <>
       <Head>
@@ -448,6 +495,16 @@ export default function Chat() {
             /10 {language === "en" ? "questions" : "問題"})
           </div>
         </div>
+
+        {/* 錯誤消息 */}
+        {errorMessage && (
+          <div className="error-message">
+            <p>{errorMessage}</p>
+            <button onClick={handleRetry} className="retry-button">
+              {language === "en" ? "Retry" : "重試"}
+            </button>
+          </div>
+        )}
 
         {/* 使用警告 */}
         {usageWarning && (
@@ -558,11 +615,13 @@ export default function Chat() {
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             className="message-input"
-            disabled={progress >= 100 || usageCount >= monthlyLimit}
+            disabled={
+              progress >= 100 || usageCount >= monthlyLimit || isLoading
+            }
           />
           <button
             onClick={handleSendMessage}
-            className={`send-button ${progress >= 100 || usageCount >= monthlyLimit ? "disabled" : ""}`}
+            className={`send-button ${progress >= 100 || usageCount >= monthlyLimit || isLoading ? "disabled" : ""}`}
             disabled={
               progress >= 100 || usageCount >= monthlyLimit || isLoading
             }
@@ -782,6 +841,40 @@ export default function Chat() {
           color: #666;
           background-color: rgba(255, 255, 255, 0.7);
           border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        /* 錯誤消息 */
+        .error-message {
+          background-color: #ffebee;
+          border-left: 4px solid #d8365d;
+          padding: 10px 15px;
+          margin: 10px;
+          border-radius: 4px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-message p {
+          margin: 0;
+          color: #d32f2f;
+          font-size: 14px;
+        }
+
+        .retry-button {
+          background-color: #d8365d;
+          color: white;
+          border: none;
+          padding: 5px 10px;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+          transition: background-color 0.2s;
+        }
+
+        .retry-button:hover {
+          background-color: #c62828;
         }
 
         /* 使用警告 */

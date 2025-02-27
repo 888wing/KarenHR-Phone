@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import {
   LineChart,
@@ -21,66 +19,13 @@ import {
   Radar,
 } from "recharts";
 
-const InterviewPerformanceChart = ({ evaluationHistory }) => {
-  // 如果有提供評估歷史，使用真實數據；否則使用模擬數據
-  const useRealData = evaluationHistory && evaluationHistory.length > 0;
-
-  // 處理真實數據轉換為圖表格式
-  const getPerformanceHistory = () => {
-    if (useRealData) {
-      return evaluationHistory
-        .map((evaluation, index) => {
-          const date = new Date(evaluation.timestamp);
-          const formatDate = `${date.getMonth() + 1}/${date.getDate()}`;
-
-          return {
-            date: formatDate,
-            score: evaluation.totalScore,
-            clarity: evaluation.categoryScores.clarity,
-            confidence: evaluation.categoryScores.confidence,
-            relevance: evaluation.categoryScores.relevance,
-            technical: evaluation.categoryScores.technical,
-            communication: evaluation.categoryScores.communication,
-          };
-        })
-        .reverse(); // 確保時間順序是從早到晚
-    } else {
-      // 返回模擬數據
-      return [
-        // ... 現有模擬數據 ...
-      ];
-    }
-  };
-
-  // 獲取最新評估的詳細評分
-  const getCurrentScores = () => {
-    if (useRealData && evaluationHistory.length > 0) {
-      const latest = evaluationHistory[0];
-      return [
-        { category: "回答清晰度", value: latest.categoryScores.clarity },
-        { category: "自信程度", value: latest.categoryScores.confidence },
-        { category: "內容相關性", value: latest.categoryScores.relevance },
-        { category: "技術知識", value: latest.categoryScores.technical },
-        { category: "溝通技巧", value: latest.categoryScores.communication },
-      ];
-    } else {
-      // 返回模擬數據
-      return [
-        // ... 現有模擬數據 ...
-      ];
-    }
-  };
-
-  // 計算實際數據
-  const performanceHistory = getPerformanceHistory();
-  const currentScores = getCurrentScores();
-
-  // ... 其餘代碼保持不變 ...
-};
-
-const InterviewPerformanceChart = () => {
-  // 模擬面試歷史數據
-  const performanceHistory = [
+const InterviewPerformanceChart = ({
+  evaluationHistory,
+  performanceHistory,
+  currentScores,
+}) => {
+  // 使用傳入的數據或默認數據
+  const chartData = performanceHistory || [
     {
       date: "2/15",
       score: 68,
@@ -132,7 +77,7 @@ const InterviewPerformanceChart = () => {
   ];
 
   // 當前面試詳細評分數據
-  const currentScores = [
+  const detailScores = currentScores || [
     { category: "回答清晰度", value: 95 },
     { category: "自信程度", value: 92 },
     { category: "內容相關性", value: 95 },
@@ -148,7 +93,7 @@ const InterviewPerformanceChart = () => {
         <div className="bg-white p-2 rounded-lg shadow-sm">
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart
-              data={performanceHistory}
+              data={chartData}
               margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
             >
               <defs>
@@ -185,7 +130,7 @@ const InterviewPerformanceChart = () => {
         <h3 className="text-lg font-medium mb-2">能力分析</h3>
         <div className="bg-white p-2 rounded-lg shadow-sm">
           <ResponsiveContainer width="100%" height={250}>
-            <RadarChart outerRadius={90} data={currentScores}>
+            <RadarChart outerRadius={90} data={detailScores}>
               <PolarGrid />
               <PolarAngleAxis dataKey="category" />
               <PolarRadiusAxis domain={[0, 100]} />
@@ -215,7 +160,7 @@ const InterviewPerformanceChart = () => {
         <div className="bg-white p-2 rounded-lg shadow-sm">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart
-              data={currentScores}
+              data={detailScores}
               margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
               barSize={20}
             >
@@ -239,6 +184,45 @@ const InterviewPerformanceChart = () => {
           </ResponsiveContainer>
         </div>
       </div>
+
+      <style jsx>{`
+        .space-y-6 > * + * {
+          margin-top: 1.5rem;
+        }
+
+        .shadow-sm {
+          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .rounded-lg {
+          border-radius: 0.5rem;
+        }
+
+        .text-lg {
+          font-size: 1.125rem;
+          line-height: 1.75rem;
+        }
+
+        .font-medium {
+          font-weight: 500;
+        }
+
+        .mb-2 {
+          margin-bottom: 0.5rem;
+        }
+
+        .mb-6 {
+          margin-bottom: 1.5rem;
+        }
+
+        .p-2 {
+          padding: 0.5rem;
+        }
+
+        .bg-white {
+          background-color: white;
+        }
+      `}</style>
     </div>
   );
 };
